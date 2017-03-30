@@ -6,7 +6,7 @@ import glob
 
 
 if __name__ == '__main__':
-    data = np.load('my_array.npy')
+    data = np.load('image_array.npy')
     for i in range(0, 10):
         img = data[i][:][:][:]
         plt.imshow(img)

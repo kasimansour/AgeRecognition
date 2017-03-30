@@ -2,6 +2,7 @@ import numpy as np
 import cv2
 import glob, os
 import re
+from labelizer import turn_age_into_vector
 import matplotlib.pyplot as plt
 
 
@@ -18,7 +19,7 @@ def displayFaces_allFiles(directory):
         img = cv2.imread(file)
         height, width, channel = img.shape
         faces = face_cascade.detectMultiScale(img, 1.3, 5)
-        #print("File : " + file)
+        print("File : " + file)
         age = find_age(file)
 
         if age >= 0:
@@ -55,58 +56,58 @@ def displayFaces_allFiles(directory):
                         print(height, width)
                         print(y_top, y_bottom, x_left, x_right)
                         print(roi_color.shape)
-                        print("EROOOOOOOR !!!!!!")
-                """while(1):
+                        print("ERROOOOOOOR !!!!!!")
+                while(1):
                     if cv2.waitKey(1) & 0xFF == ord('n'):
-                        break"""
+                        break
     cv2.destroyAllWindows()
 
 
 def detectFaces_allFiles(directory):
-    """Detect faces in images, returns a list with images that contain faces
-        and saves these face images in the FacePhoto directory"""
+    """Detects faces in images, returns a list with images that contain faces
+        and saves these face images in the FacePhoto directory."""
     files_list = glob.glob(directory)
     for file in files_list:
+        print(file)
         img = cv2.imread(file)
-        height, width, channel = img.shape
-        faces = face_cascade.detectMultiScale(img, 1.3, 5)
-        age = find_age(file)
+        if img is not None:
+            height, width, channel = img.shape
+            faces = face_cascade.detectMultiScale(img, 1.3, 5)
+            age = find_age(file)
 
-        if age >= 0:
-            if faces != ():
-                for (x, y, w, h) in faces:
-                    # On decale y vers le haut pour mieux centrer le visage
-                    if y - int(0.1*h) >= 0:
-                        y -= int(0.1*h)
-                        h *= 1.2
-                    else:
-                        h += y + int(0.1*h)
-                        y = 0
-                    if h > width:
-                        h = width
-                    # A partir de l'origine du visage (point en haut a gauche), on definit
-                    # notre carre, de cote le nouveau h
-                    if x + 0.8*h > width:
-                        x_right = width
-                        x_left = width - int(h)
-                    elif x - 0.2*h < 0:
-                        x_left = 0
-                        x_right = int(h)
-                    else:
-                        x_right = min(int(x) + int(0.8*h), int(width))
-                        x_left = int(x_right) - int(h)
-                    y_top = int(y)
-                    y_bottom = int(y) + int(h)
-                    roi_color = img[y_top:y_bottom, x_left:x_right]
-                    cv2.imwrite("./FacePhoto/{}.jpg".format(extract_filename(file)), roi_color)
-                    print("{} saved !".format(extract_filename(file)))
+            if age >= 0:
+                if faces != ():
+                    for (x, y, w, h) in faces:
+                        # On decale y vers le haut pour mieux centrer le visage
+                        if y - int(0.1*h) >= 0:
+                            y -= int(0.1*h)
+                            h *= 1.2
+                        else:
+                            h += y + int(0.1*h)
+                            y = 0
+                        if h > width:
+                            h = width
+                        # A partir de l'origine du visage (point en haut a gauche), on definit
+                        # notre carre, de cote le nouveau h
+                        if x + 0.8*h > width:
+                            x_right = width
+                            x_left = width - int(h)
+                        elif x - 0.2*h < 0:
+                            x_left = 0
+                            x_right = int(h)
+                        else:
+                            x_right = min(int(x) + int(0.8*h), int(width))
+                            x_left = int(x_right) - int(h)
+                        y_top = int(y)
+                        y_bottom = int(y) + int(h)
+                        roi_color = img[y_top:y_bottom, x_left:x_right]
+                        cv2.imwrite("./FacePhoto/{}.jpg".format(extract_filename(file)), resize_image(roi_color, 227))
             else:
                 files_list.remove(file)
         else:
             files_list.remove(file)
     cv2.destroyAllWindows()
     return files_list
-
 
 
 def find_age(str):
@@ -121,35 +122,50 @@ def find_age(str):
 
 
 def extract_filename(str):
-    """Finds the age of the person on the photo, based on the filename"""
+    """Finds the filename in a path."""
     regex = r"([0-9_-]+).jpg"
     matches = re.search(regex, str)
     if matches:
         return matches.group(1)
 
 
-def create_array(files_list):
+def create_image_array(files_list):
     """Creates an array of images"""
     im_array = np.array([np.array(cv2.imread(file)) for file in files_list])
     return im_array
+
+
+def create_label_array(files_list):
+    """Creates an array of labels"""
+    lab_array = np.array([np.array(turn_age_into_vector(find_age(file))) for file in files_list])
+    return lab_array
+
 
 def save_array(array, filename):
     """Saves an array under the name 'filename' """
     np.save(filename, array)
 
+
 def resize_image(image, side):
     """Resize an image to a square image (width = height = side)"""
     cv2.imshow("Original", image)
     small = cv2.resize(image, (side,side), interpolation = cv2.INTER_AREA)
-    cv2.imshow("Small", small)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    return small
+
 
 if __name__ == '__main__':
-    dir = "./photos/00/*.jpg"
-    #displayFaces_allFiles(dir)
-    detectFaces_allFiles(dir)
+    count = 0
+    if glob.glob("./FacePhoto/*.jpg") == []:
+        dir_list = glob.glob("./photos/*")
+        for directory in dir_list:
+            count += 1
+            print(count)
+            dir = "{}/*.jpg".format(directory)
+            #displayFaces_allFiles(dir)
+            detectFaces_allFiles(dir)
     face_dir = "./FacePhoto/*.jpg"
     face_photos_list = glob.glob(face_dir)
-    my_array = create_array(face_photos_list)
-    save_array(my_array, 'my_array.npy')
+    image_array = create_image_array(face_photos_list)
+    label_array = create_label_array(face_photos_list)
+    save_array(image_array, 'image_array.npy')
+    save_array(label_array, 'label_array.npy')

@@ -3,8 +3,6 @@ import os
 import numpy as np
 
 def find_age(str):
-
-
     regex = r"_([0-9]+).+_([0-9]+)"
     matches = re.search(regex, str)
     if matches:
@@ -65,4 +63,5 @@ def save_array():
     np.save('wiki_labels.npy', labels)
 
 
-save_array()
+if __name__ == '__main__':
+    save_array()
