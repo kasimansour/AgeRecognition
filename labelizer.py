@@ -69,6 +69,7 @@ def save_array(n):
     np.save('wiki_labels.npy', labels)
 
 
+
 if __name__ == "__main__":
     number_of_folders = 20
     save_array(number_of_folders)

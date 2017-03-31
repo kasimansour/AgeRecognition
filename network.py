@@ -11,7 +11,7 @@ def load(data_path, session):
                 session.run(tf.get_variable(subkey).assign(data))
 
 def load_with_skip(data_path, session, skip_layer):
-    data_dict = np.load(data_path).item()
+    data_dict = np.load(data_path, encoding="bytes").item()
     for key in data_dict:
         if key not in skip_layer:
             with tf.variable_scope(key, reuse=True):
@@ -26,9 +26,10 @@ def make_var(name, shape):
     return tf.get_variable(name, shape)
 
 def conv(input, k_h, k_w, c_o, s_h, s_w, name, relu=True, padding=DEFAULT_PADDING, group=1):
-    c_i = input.get_shape()[-1]
+    c_i = int(input.get_shape()[-1])
+    # print(c_i)
     assert c_i%group==0
-    assert c_o%group==0        
+    assert c_o%group==0
     convolve = lambda i, k: tf.nn.conv2d(i, k, [1, s_h, s_w, 1], padding=padding)
     with tf.variable_scope(name) as scope:
         kernel = make_var('weights', shape=[k_h, k_w, c_i/group, c_o])
@@ -42,7 +43,7 @@ def conv(input, k_h, k_w, c_o, s_h, s_w, name, relu=True, padding=DEFAULT_PADDIN
             input_groups = tf.split(input, group, 3)
             kernel_groups = tf.split(kernel, group, 3)
             output_groups = [convolve(i, k) for i,k in zip(input_groups, kernel_groups)]
-            #conv = tf.concat(3, output_groups)  
+            #conv = tf.concat(3, output_groups)
             conv = tf.concat(output_groups, 3) # update for FT 0.12
         if relu:
             bias = tf.reshape(tf.nn.bias_add(conv, biases), conv.get_shape().as_list())
