@@ -8,11 +8,11 @@ from tempfile import TemporaryFile
 class Dataset:
     def __init__(self): 
         # Init params
-        self.train_size = 4000 # size of train set
-        self.test_size = 5532 # size of test set
+        self.train_size = 6000 # size of train set
+        self.test_size = 2000 # size of test set
         self.scale_size = 227 
         self.mean = np.array([104., 117., 124.]) # RGB values of the mean-image of ILSVRC
-        self.n_classes = 40
+        self.n_classes = 7
         self.cur = 0 # for train
         self.cur_test = 0 # for test    
 
